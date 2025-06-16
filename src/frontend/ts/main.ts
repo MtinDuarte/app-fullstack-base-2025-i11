@@ -1,12 +1,84 @@
-/* Interface is used to implement behaviours.
-   "Mostrable" implements "mostrarInfo" as a public method  */
-interface Mostrable
-{
-    mostrarInfo(): string;
-}
+let SPA_URL: string =  "http://localhost:8000";
 
-class Main implements Mostrable
+class Main implements EventListenerObject
 {
+    nombre: string = "Martin";
+    per: Persona = new Persona("", 3);
+
+    /* Generic showinConsole */
+    public showInConsole( mensaje: string) {console.log(mensaje);}
+    
+    public queryServer() 
+    {
+        /* Create an instance of XMLHTTP request */
+        let xmlReq = new XMLHttpRequest();
+        
+        /* Wait onreadyState */
+        xmlReq.onreadystatechange = () => {
+            /* Check ready */
+            if (xmlReq.readyState == 4) {
+                /* Check STATUS_OK HTTP REQUEST */
+                if (xmlReq.status == 200) 
+                {
+                    /* Log in console    */
+                    console.log(xmlReq.responseText);
+
+                    /* Get input element to put the server response */
+                    document.getElementById("textarea_1").innerHTML = xmlReq.responseText;
+                    
+                    /* Parse response as JSON */
+                    let devices: Array<Device> = JSON.parse(xmlReq.responseText);
+                    
+                    /* Log devices in console */
+                    for (let o of devices) 
+                    {
+                        console.log(o.id);    
+                        console.log(o.name);    
+                        console.log(o.description); 
+                        console.log(o.state);
+                    }
+                    
+                    /*   Grab list element in HTML */
+                    let div = document.getElementById("lista");
+                    
+                    /* Insert H1 header */
+                    div.innerHTML = "<h1>Titulo</h1>"
+                    
+                    /* Insert description as body */
+                    div.innerHTML += "<p> descripcion</p>"
+
+                    /* Button */
+                    div.innerHTML+="<input type='button'>"
+                    
+                } else {alert("Query failed.");}
+            }
+        }
+        
+        /* Complete with the following:
+            1- HTTP REQUEST 
+            2- URL 
+            3- Async?
+        */
+        xmlReq.open("GET", SPA_URL + "/devices", true);
+
+        xmlReq.send(JSON.stringify({name:"",passwo:""}));
+    }
+
+
+    handleEvent(object: Event): void{
+        console.log(object)
+        let elementoClick =<HTMLInputElement> object.target;
+
+        if(elementoClick.id=="btn_1"){
+           this.per.obtenerDatos()
+            
+        } else if(elementoClick.id=="btnMostrar" && object.type=="click"){
+            this.queryServer();
+        } else {
+            console.log("pase por el boton!")
+        }
+
+    }
     // Implements mostrarInfo
     public mostrarInfo(): string {console.log("Main Class - executing mostrarInfo()");return "";}
 }
@@ -14,41 +86,10 @@ class Main implements Mostrable
 /*  This will be executed after all HTML is loaded... */
 window.addEventListener("load" ,  () => 
 {
-    // Creation of 2 objets type of "Persona"
-    let per2: Persona = new Persona("Juan",17654322);
-    let per3: Persona = new Persona("Pedro", 18222194);
-
-    // Creation of other object type of "Usuario" with +1 attribute (mail) compare to "Persona"
-    let usr1: Usuario = new Usuario("Martin",38762123,"duartemartn@gmail.com");
-
-    // New instance of class Main
+    // New instance of main
     let main: Main = new Main();
-
-    let personas: Array<Persona> = new Array();
-    /* Push personas objects  */
-    personas.push(per2); personas.push(per3);
-    
-    /* usr1 extends Persona, so can be added to <Persona> array */
-    personas.push(usr1);
-
-    /* Declaration of Mostrable interface array.  */
-    let mostrables: Array<Mostrable> = new Array();
-    mostrables.push(per2);
-    mostrables.push(main);
-    mostrables.push(usr1);
-    
-    //for (let m of mostrables) { console.log(m.mostrarInfo())}
-
-    /* Grab current value of textarea_1 and cast as HTMLInputElement  */
-    let current_value = document.getElementById("textarea_1") as HTMLInputElement;
-
-    /* Append text... */
-    let new_value = "Hola mundo !!!" + "\n" + current_value.value;
-    
-    /* Assign new value */
-    document.getElementById("textarea_1").innerHTML = new_value;
-
-    /* Click event listener for button checking if it is not null.. */
-    document.getElementById("btn_1")?.addEventListener("click", main.mostrarInfo);
+     
+    document.getElementById("btn_1")?.addEventListener("click", main); 
+    document.getElementById("btnMostrar")?.addEventListener("click", main);
 });
 

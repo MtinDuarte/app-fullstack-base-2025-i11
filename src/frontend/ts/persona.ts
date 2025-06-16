@@ -1,4 +1,4 @@
-class Persona implements Mostrable
+class Persona
 {
   // Atributes 
   public nombre: string;
@@ -8,7 +8,7 @@ class Persona implements Mostrable
   constructor(nombre:string,dni:number) {this.nombre = nombre; this.dni = dni;}
 
   // Methods
-  public mostrarInfo(): string {return this.obtenerDatos();}
+  //public mostrarInfo(): string {return this.obtenerDatos();}
 
   public obtenerDatos():string { return "Name: " + this.nombre + " - DNI:" + this.dni;}
 }
