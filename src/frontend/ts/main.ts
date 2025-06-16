@@ -8,7 +8,7 @@ interface Mostrable
 class Main implements Mostrable
 {
     // Implements mostrarInfo
-    public mostrarInfo(): string { return "Estoy en el MAIN!";}
+    public mostrarInfo(): string {console.log("Main Class - executing mostrarInfo()");return "";}
 }
 
 /*  This will be executed after all HTML is loaded... */
@@ -37,10 +37,7 @@ window.addEventListener("load" ,  () =>
     mostrables.push(main);
     mostrables.push(usr1);
     
-    for (let m of mostrables) { console.log(m.mostrarInfo())}
-
-
-
+    //for (let m of mostrables) { console.log(m.mostrarInfo())}
 
     /* Grab current value of textarea_1 and cast as HTMLInputElement  */
     let current_value = document.getElementById("textarea_1") as HTMLInputElement;
@@ -52,20 +49,6 @@ window.addEventListener("load" ,  () =>
     document.getElementById("textarea_1").innerHTML = new_value;
 
     /* Click event listener for button checking if it is not null.. */
-    document.getElementById("btn_1")?.addEventListener("click", ()=>
-    {
-        for (let p of personas) 
-        {
-            if (p instanceof Usuario) 
-            {
-                let u = <Usuario>p;
-                alert(u.obtenerDatos() + " is a user.");
-            } 
-            else 
-            {
-                alert(p.obtenerDatos() + " is not user.")
-            }
-        }
-    });
+    document.getElementById("btn_1")?.addEventListener("click", main.mostrarInfo);
 });
 
