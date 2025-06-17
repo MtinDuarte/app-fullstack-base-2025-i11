@@ -22,35 +22,22 @@ class Main implements EventListenerObject
                 {
                     /* Log in console    */
                     console.log(xmlReq.responseText);
-
-                    /* Get input element to put the server response */
-                    document.getElementById("textarea_1").innerHTML = xmlReq.responseText;
-                    
-                    /* Parse response as JSON */
+              
+                    /* Parse response as JSON */                    
                     let devices: Array<Device> = JSON.parse(xmlReq.responseText);
-                    
-                    /* Log devices in console */
-                    for (let o of devices) 
-                    {
-                        console.log(o.id);    
-                        console.log(o.name);    
-                        console.log(o.description); 
-                        console.log(o.state);
-                    }
-                    
-                    /*   Grab list element in HTML */
                     let div = document.getElementById("lista");
+                    div.innerHTML = "";
+                    let listado: string = ""
                     
-                    /* Insert H1 header */
-                    div.innerHTML = "<h1>Titulo</h1>"
-                    
-                    /* Insert description as body */
-                    div.innerHTML += "<p> descripcion</p>"
-
-                    /* Button */
-                    div.innerHTML+="<input type='button'>"
-                    
-                } else {alert("Query failed.");}
+                    for (let o of devices)
+                    {
+                        listado+="<div class='col s12 m6 l6 xl4'>"
+                        listado += `<h3>${o.name}</h3><p>${o.description}</p>`
+                        listado += "<input type='button' value='On/OFF'>"
+                        listado += "</div>";
+                    }
+                    div.innerHTML = listado;
+                }else {alert("Query failed.");}
             }
         }
         
@@ -60,8 +47,7 @@ class Main implements EventListenerObject
             3- Async?
         */
         xmlReq.open("GET", SPA_URL + "/devices", true);
-
-        xmlReq.send(JSON.stringify({name:"",passwo:""}));
+        xmlReq.send();
     }
 
 
@@ -69,15 +55,38 @@ class Main implements EventListenerObject
         console.log(object)
         let elementoClick =<HTMLInputElement> object.target;
 
-        if(elementoClick.id=="btn_1"){
-           this.per.obtenerDatos()
-            
-        } else if(elementoClick.id=="btnMostrar" && object.type=="click"){
-            this.queryServer();
-        } else {
-            console.log("pase por el boton!")
-        }
+        switch(elementoClick.id)
+        {
+            case "ClickAca":
+            {
+                /* Grab name input element  */
+                let NameInput =<HTMLInputElement> document.getElementById("NameInput");            
+                
+                /* Configure as hidden */
+                NameInput.hidden = true;
 
+                /* Save value of the input element   */
+                let nombre = NameInput.value;
+                
+                /* Alert */
+                alert("el usuario es " + nombre);
+                
+                /* if necessary this title can be changed */
+                //document.getElementById("titulo1").innerHTML = " titulo nuevo";
+                
+                /* hide all list  */
+                let div = document.getElementById("lista");
+                div.hidden = true;
+            }break;
+            case "btnMostrar":
+            {
+                if(object.type=="click")
+                    this.queryServer();
+            }break;
+            default:
+                console.log("pase por el boton!");
+
+        }
     }
     // Implements mostrarInfo
     public mostrarInfo(): string {console.log("Main Class - executing mostrarInfo()");return "";}
@@ -89,7 +98,7 @@ window.addEventListener("load" ,  () =>
     // New instance of main
     let main: Main = new Main();
      
-    document.getElementById("btn_1")?.addEventListener("click", main); 
+    document.getElementById("ClickAca")?.addEventListener("click", main); 
     document.getElementById("btnMostrar")?.addEventListener("click", main);
 });
 
