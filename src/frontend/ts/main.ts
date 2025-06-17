@@ -1,4 +1,7 @@
 let SPA_URL: string =  "http://localhost:8000";
+let collectionItemAvatar: string = "<li class='collection-item avatar'>";
+let image_lightbulb : string = `<img src="./static/images/lightbulb.png" alt="" class="circle">`;
+let image_window : string = `<img src="./static/images/window.png" alt="" class="circle">`;
 
 class Main implements EventListenerObject
 {
@@ -31,12 +34,44 @@ class Main implements EventListenerObject
                     
                     for (let o of devices)
                     {
-                        listado+="<div class='col s12 m6 l6 xl4'>"
-                        listado += `<h3>${o.name}</h3><p>${o.description}</p>`
-                        listado += "<input type='button' value='On/OFF'>"
-                        listado += "</div>";
+                        listado += collectionItemAvatar
+
+                        if (o.type == 1)                                                     
+                            listado += image_lightbulb
+                         else 
+                            listado += image_window
+                        
+                        listado += `<span class="title">${o.name}</span>`
+                        listado += ` <p>${o.description}</p>`
+                        
+                        listado += `<a href="#!" class="secondary-content">
+                            <div class="switch">
+                                <label>
+                                Off`;
+                                
+                        if (o.state) 
+                        {
+                            listado += `
+                                <input id='cb_${o.id}' miIdBd='${o.id}' checked type="checkbox">`
+                        }
+                        else 
+                        {
+                            listado += `<input id='cb_${o.id}' type="checkbox">`
+                        }
+                        listado += `<span class="lever"></span>
+                                    On
+                                    </label>
+                                    </div>
+                                    </a>`
+                        listado += '</li>';
                     }
                     div.innerHTML = listado;
+
+                    for (let o of devices) {
+                        let checkbox = document.getElementById("cb_" + o.id);
+                        checkbox.addEventListener("click", this);
+                    }
+
                 }else {alert("Query failed.");}
             }
         }
@@ -84,8 +119,17 @@ class Main implements EventListenerObject
                     this.queryServer();
             }break;
             default:
-                console.log("pase por el boton!");
-
+            {
+                if(elementoClick.id.startsWith("cb_"))
+                {                
+                    // <input id='cb_1' type="checkbox"> // true //cb_1
+                    console.log("pase por el check!!", elementoClick.checked, elementoClick.id)
+                    console.log(elementoClick.id.substring(3, elementoClick.id.length));
+                    console.log(elementoClick)
+                    console.log(elementoClick.getAttribute("miIdBd"));
+                }else
+                    console.log("pase por el boton!");
+            }break;
         }
     }
     // Implements mostrarInfo
