@@ -28,19 +28,27 @@ class Main implements EventListenerObject
               
                     /* Parse response as JSON */                    
                     let devices: Array<Device> = JSON.parse(xmlReq.responseText);
-                    let div = document.getElementById("lista");
+                    let div = document.getElementById("devices");
                     div.innerHTML = "";
                     let listado: string = ""
                     
                     for (let o of devices)
                     {
                         listado += collectionItemAvatar
-
-                        if (o.type == 1)                                                     
-                            listado += image_lightbulb
-                         else 
-                            listado += image_window
                         
+                        switch(o.type)
+                        {
+                            // case 2: 
+                            //     listado +=`<i class="material-icons dp48">kitchen</i>`
+                            //     break;
+                            case 1:
+                                listado += image_window
+                                break;
+                            case 0:
+                                listado += image_lightbulb
+                                break;
+                        }
+                                                    
                         listado += `<span class="title">${o.name}</span>`
                         listado += ` <p>${o.description}</p>`
                         
@@ -141,8 +149,8 @@ window.addEventListener("load" ,  () =>
 {
     // New instance of main
     let main: Main = new Main();
-     
-    document.getElementById("ClickAca")?.addEventListener("click", main); 
-    document.getElementById("btnMostrar")?.addEventListener("click", main);
+    
+    main.queryServer();
+    
 });
 
