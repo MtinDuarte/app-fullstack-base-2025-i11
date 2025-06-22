@@ -4,11 +4,9 @@ body {
     min-height: 100vh;
     flex-direction: column;
 }
-
 main {
     flex: 1 0 auto;
 }
-
 .miColor{
     background-color: rgb(36, 154, 154) !important;
 }
@@ -16,10 +14,23 @@ main {
  background-color: rgb(154, 150, 36);
 }
 #botones{
-        text-align: center;
+    text-align: center;
 }
 .title{
     color: rgb(12, 128, 82);
     font-size: large !important;
     font-weight: bold;
+}
+.card {
+    background-color: #3f51b5;
+    color: white;
+}
+.switch label .lever {
+    background-color: white;
+}
+.switch label input:checked + .lever {
+    background-color: #4caf50;
+}
+.btn-flat {
+    color: white;
 }

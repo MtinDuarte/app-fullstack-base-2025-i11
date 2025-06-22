@@ -1,7 +1,77 @@
 let SPA_URL: string =  "http://localhost:8000";
 let collectionItemAvatar: string = "<li class='collection-item avatar'>";
-let image_lightbulb : string = `<img src="./static/images/lightbulb.png" alt="" class="circle">`;
-let image_window : string = `<img src="./static/images/window.png" alt="" class="circle">`;
+let image_lightbulb : string = `<i class="material-icons left">lightbulb</i>`;
+let image_window : string = `<i class="material-icons left">settings_overscan</i>`;
+
+function getDeviceIcon(type) {
+  switch (type) {
+    case 0: return 'lightbulb';         // Luz
+    case 1: return 'window';            // Cortina / persiana
+    case 2: return 'ac_unit';           // Aire
+    case 3: return 'music_note';        // Música
+    case 4: return 'tv';                // Televisor
+    case 5: return 'toys_fan';          // Ventilador (alternativa: fan en sharp)
+    default: return 'devices';          // Genérico
+  }
+}
+function getDeviceControl(device) {
+  switch (device.type) {
+    case 0: // Luz
+    case 1: // Persiana
+
+      /* @ToDo: code handleSwitchChange    */
+      return `
+        <div class="switch">
+           <label class="white-text">
+            Off
+            <input type="checkbox" id="switch_${device.id}" ${device.state ? 'checked' : ''} 
+              onchange="handleSwitchChange(${device.id}, this.checked)">
+            <span class="lever"></span>
+            On
+          </label>
+        </div>`;
+    case 2: // Aire acondicionado
+    case 3: // Ventilador
+     /* @ToDo: code handleSliderChange    */
+      return `
+        <p class="range-field">
+          <input type="range" id="slider_${device.id}" min="0" max="100" value="${device.state}"
+            onchange="handleSliderChange(${device.id}, this.value)" />
+        </p>`;
+    default:
+      return '';
+  }
+}
+function createDeviceCard(device) 
+{
+  
+  /* Map materialize icon for each type (integer) */
+  const icon = getDeviceIcon(device.type);
+
+  /* Get widget in order to show a mechanism of controlling the device  */
+  const controlHtml = getDeviceControl(device);
+
+  /* @ToDo: code editDevice, deleteDevice */
+
+  return `
+    <div class="col s12 m6 l3">
+      <div class="card blue white-text" id="device_card_${device.id}">
+        <div class="card-content">
+          <span class="card-title">
+            <i class="material-icons left">${icon}</i>${device.name}
+          </span>
+          <p>${device.description}</p>
+           ${controlHtml}
+        </div>
+        <div class="card-action">
+          <a href="#!" class="btn-flat white-text" onclick="editDevice(${device.id})">EDITAR</a>
+          <a href="#!" class="btn-flat white-text" onclick="deleteDevice(${device.id})">ELIMINAR</a>
+        </div>        
+      </div>
+    </div>
+  `;
+}
+
 
 class Main implements EventListenerObject
 {
@@ -26,61 +96,25 @@ class Main implements EventListenerObject
                     /* Log in console    */
                     console.log(xmlReq.responseText);
               
-                    /* Parse response as JSON */                    
+                    /* Parse response as JSON */   
                     let devices: Array<Device> = JSON.parse(xmlReq.responseText);
-                    let div = document.getElementById("devices");
-                    div.innerHTML = "";
-                    let listado: string = ""
                     
-                    for (let o of devices)
-                    {
-                        listado += collectionItemAvatar
-                        
-                        switch(o.type)
-                        {
-                            // case 2: 
-                            //     listado +=`<i class="material-icons dp48">kitchen</i>`
-                            //     break;
-                            case 1:
-                                listado += image_window
-                                break;
-                            case 0:
-                                listado += image_lightbulb
-                                break;
-                        }
-                                                    
-                        listado += `<span class="title">${o.name}</span>`
-                        listado += ` <p>${o.description}</p>`
-                        
-                        listado += `<a href="#!" class="secondary-content">
-                            <div class="switch">
-                                <label>
-                                Off`;
-                                
-                        if (o.state) 
-                        {
-                            listado += `
-                                <input id='cb_${o.id}' miIdBd='${o.id}' checked type="checkbox">`
-                        }
-                        else 
-                        {
-                            listado += `<input id='cb_${o.id}' type="checkbox">`
-                        }
-                        listado += `<span class="lever"></span>
-                                    On
-                                    </label>
-                                    </div>
-                                    </a>`
-                        listado += '</li>';
-                    }
-                    div.innerHTML = listado;
-
-                    for (let o of devices) {
-                        let checkbox = document.getElementById("cb_" + o.id);
-                        checkbox.addEventListener("click", this);
-                    }
-
-                }else {alert("Query failed.");}
+                    /* Get container element from HTML   */
+                    let container = document.getElementById("devices");
+                    
+                    /* Clean container   */
+                    container.innerHTML = "";
+                    
+                    /* Create 1 card for each device */
+                    for (let device of devices) 
+                        container.innerHTML += createDeviceCard(device);
+                    
+                    
+                }
+                else 
+                {
+                    alert("Query failed.");
+                }
             }
         }
         
