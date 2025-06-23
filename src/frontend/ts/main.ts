@@ -1,9 +1,53 @@
 let SPA_URL: string =  "http://localhost:8000";
-let collectionItemAvatar: string = "<li class='collection-item avatar'>";
-let image_lightbulb : string = `<i class="material-icons left">lightbulb</i>`;
-let image_window : string = `<i class="material-icons left">settings_overscan</i>`;
 
-function getDeviceIcon(type) {
+//#region Edition
+function devices_cancelEdition(id: number) 
+{
+    const form = document.getElementById(`edit_form_${id}`);
+    form?.remove();
+}
+function device_saveChanges(id: number) 
+{
+    const nameInput = <HTMLInputElement>document.getElementById(`edit_name_${id}`);
+    const descInput = <HTMLTextAreaElement>document.getElementById(`edit_desc_${id}`);
+    const typeSelect= <HTMLInputElement>document.getElementById(`edit_type_${id}`);
+
+    const updatedName = nameInput.value;
+    const updatedDesc = descInput.value;
+    const updatedType = parseInt(typeSelect.value);
+
+    console.log(`Guardar ${id}:`, updatedName, updatedDesc);
+
+    /* Update database */
+    devices_updateDevice(id,updatedName,updatedDesc,0,updatedType);
+
+    /* Remove edition form */
+    devices_cancelEdition(id);
+}
+function devices_updateDevice(id: number, name: string, description: string, state: number, type: number) 
+{
+  const xmlReq = new XMLHttpRequest();
+
+  xmlReq.onreadystatechange = () => {
+    if (xmlReq.readyState === 4) {
+      if (xmlReq.status === 200) {
+        console.log("Dispositivo actualizado correctamente");
+      } else {
+        console.error("Error al actualizar dispositivo:", xmlReq.statusText);
+      }
+    }
+  };
+
+  // Codificar parámetros para que la URL sea válida
+  const url = `${SPA_URL}/devices/${id}/${encodeURIComponent(name)}/${encodeURIComponent(description)}/${state}/${type}`;
+
+  xmlReq.open("PUT", url, true);
+  xmlReq.send();
+}
+//#endregion
+
+//#region  Utils
+function devices_getIcon(type) {
   switch (type) {
     case 0: return 'lightbulb';         // Luz
     case 1: return 'window';            // Cortina / persiana
@@ -14,42 +58,77 @@ function getDeviceIcon(type) {
     default: return 'devices';          // Genérico
   }
 }
-function getDeviceControl(device) {
+function devices_getWidget(device) {
   switch (device.type) {
     case 0: // Luz
-    case 1: // Persiana
-
+    case 1: // Cortina
+    case 4: // TV
       /* @ToDo: code handleSwitchChange    */
       return `
         <div class="switch">
-           <label class="white-text">
+          <label class="white-text">
             Off
-            <input type="checkbox" id="switch_${device.id}" ${device.state ? 'checked' : ''} 
-              onchange="handleSwitchChange(${device.id}, this.checked)">
+            <input type="checkbox" id="switch_${device.id}" ${device.state ? 'checked' : ''}>
             <span class="lever"></span>
             On
           </label>
         </div>`;
-    case 2: // Aire acondicionado
-    case 3: // Ventilador
+    case 2: // AC
+    case 3: // Musica(volumen)
+    case 5: // Ventliador
      /* @ToDo: code handleSliderChange    */
       return `
         <p class="range-field">
-          <input type="range" id="slider_${device.id}" min="0" max="100" value="${device.state}"
-            onchange="handleSliderChange(${device.id}, this.value)" />
+          <input type="range" id="slider_${device.id}" min="0" max="100" value="${device.state}" />
         </p>`;
     default:
       return '';
   }
 }
-function createDeviceCard(device) 
+function devices_getTypeSelect(device)
+{
+  const typeLabels = [
+    "Luz", "Persiana", "Aire", "Música", "TV", "Ventilador"
+  ];
+  const label = typeLabels[device.type] ?? "Otro";
+
+  return `<div><span class="chip white black-text z-depth-1">${label}</span></div>`;
+}
+//#endregion
+
+function device_deleteDevice(id: number)
+{
+  const xmlReq = new XMLHttpRequest();
+
+  xmlReq.onreadystatechange = () => {
+    if (xmlReq.readyState === 4) {
+      if (xmlReq.status === 200) {
+        console.log("Dispositivo eliminado correctamente");
+      } else {
+        console.error("Error al eliminar dispositivo:", xmlReq.statusText);
+      }
+    }
+  };
+
+  // Codificar parámetros para que la URL sea válida
+  const url = `${SPA_URL}/devices/${id}`;
+
+  xmlReq.open("DELETE", url, true);
+  xmlReq.send();    
+}
+
+function devices_createCard(device) 
 {
   
   /* Map materialize icon for each type (integer) */
-  const icon = getDeviceIcon(device.type);
+  const icon = devices_getIcon(device.type);
 
   /* Get widget in order to show a mechanism of controlling the device  */
-  const controlHtml = getDeviceControl(device);
+  const controlHtml = devices_getWidget(device);
+
+  /* Get Device type field  */
+  const typeSelectHtml = devices_getTypeSelect(device);
+
 
   /* @ToDo: code editDevice, deleteDevice */
 
@@ -60,12 +139,13 @@ function createDeviceCard(device)
           <span class="card-title">
             <i class="material-icons left">${icon}</i>${device.name}
           </span>
-          <p>${device.description}</p>
-           ${controlHtml}
+            <p>${device.description}</p>
+            ${typeSelectHtml}
+           ${controlHtml}  
         </div>
         <div class="card-action">
-          <a href="#!" class="btn-flat white-text" onclick="editDevice(${device.id})">EDITAR</a>
-          <a href="#!" class="btn-flat white-text" onclick="deleteDevice(${device.id})">ELIMINAR</a>
+            <a id="edit_${device.id}" class="btn-flat white-text">EDITAR</a>
+            <a id="delete_${device.id}" class="btn-flat white-text">ELIMINAR</a>
         </div>        
       </div>
     </div>
@@ -73,11 +153,9 @@ function createDeviceCard(device)
 }
 
 
+
 class Main implements EventListenerObject
 {
-    nombre: string = "Martin";
-    per: Persona = new Persona("", 3);
-
     /* Generic showinConsole */
     public showInConsole( mensaje: string) {console.log(mensaje);}
     
@@ -102,14 +180,15 @@ class Main implements EventListenerObject
                     /* Get container element from HTML   */
                     let container = document.getElementById("devices");
                     
-                    /* Clean container   */
-                    container.innerHTML = "";
-                    
-                    /* Create 1 card for each device */
-                    for (let device of devices) 
-                        container.innerHTML += createDeviceCard(device);
-                    
-                    
+                    if(container != null)
+                    {
+                        /* Clean container   */
+                        container.innerHTML = "";
+                        
+                        /* Create 1 card for each device */
+                        for (let device of devices) 
+                            container.innerHTML += devices_createCard(device);                        
+                    }                    
                 }
                 else 
                 {
@@ -127,53 +206,98 @@ class Main implements EventListenerObject
         xmlReq.send();
     }
 
+    private editDevice(id: number) 
+    {
+        const card = document.getElementById(`device_card_${id}`);
+        if (!card) return;
 
-    handleEvent(object: Event): void{
-        console.log(object)
-        let elementoClick =<HTMLInputElement> object.target;
+        // Evitar múltiples formularios de edición
+        if (document.getElementById(`edit_form_${id}`)) return;
 
-        switch(elementoClick.id)
+        const formHtml = `
+            <div id="edit_form_${id}">
+
+            <div class="input-field">
+                <input id="edit_name_${id}" type="text" value="">
+                <label class="active white-text" for="edit_name_${id}">Nombre</label>
+            </div>
+
+            <div class="input-field">
+                <textarea id="edit_desc_${id}" class="materialize-textarea"></textarea>
+                <label class="active  white-text" for="edit_desc_${id}">Descripción</label>
+            </div>
+            
+            <div class="input-field white-text">
+            <select id="edit_type_${id}" class="browser-default">
+                <option value="" disabled selected>Seleccione tipo</option>
+                <option value="0">Luz</option>
+                <option value="1">Persiana</option>
+                <option value="2">Aire</option>
+                <option value="3">Música</option>
+                <option value="4">TV</option>
+                <option value="5">Ventilador</option>
+            </select>
+            </div>
+                        
+            <button class="btn green" onclick="device_saveChanges(${id})">Guardar</button>
+            <button class="btn red" onclick="devices_cancelEdition(${id})">Cancelar</button>
+            </div>
+        `;
+
+        card?.insertAdjacentHTML("beforeend", formHtml);   
+    }
+
+    private deleteDevice(id: number) 
+    {   
+        
+        const confirmar = window.confirm("¿Está seguro que desea eliminar el dispositivo?");
+
+        if (confirmar) 
         {
-            case "ClickAca":
-            {
-                /* Grab name input element  */
-                let NameInput =<HTMLInputElement> document.getElementById("NameInput");            
-                
-                /* Configure as hidden */
-                NameInput.hidden = true;
-
-                /* Save value of the input element   */
-                let nombre = NameInput.value;
-                
-                /* Alert */
-                alert("el usuario es " + nombre);
-                
-                /* if necessary this title can be changed */
-                //document.getElementById("titulo1").innerHTML = " titulo nuevo";
-                
-                /* hide all list  */
-                let div = document.getElementById("lista");
-                div.hidden = true;
-            }break;
-            case "btnMostrar":
-            {
-                if(object.type=="click")
-                    this.queryServer();
-            }break;
-            default:
-            {
-                if(elementoClick.id.startsWith("cb_"))
-                {                
-                    // <input id='cb_1' type="checkbox"> // true //cb_1
-                    console.log("pase por el check!!", elementoClick.checked, elementoClick.id)
-                    console.log(elementoClick.id.substring(3, elementoClick.id.length));
-                    console.log(elementoClick)
-                    console.log(elementoClick.getAttribute("miIdBd"));
-                }else
-                    console.log("pase por el boton!");
-            }break;
+            device_deleteDevice(id);
+            console.log(`Dispositivo ${id} eliminado`);
+        } 
+        else 
+        {
+            console.log("Eliminación cancelada.");
         }
     }
+
+    private handleSwitchChange(id: number, state: boolean) 
+    {
+        console.log(`SWITCH dispositivo ${id}: ${state ? 'On' : 'Off'}`);
+        // lógica de actualización
+    }
+
+    private handleSliderChange(id: number, value: number) 
+    {
+        console.log(`SLIDER dispositivo ${id}: ${value}`);
+        // lógica de actualización
+    }
+
+  handleEvent(event: Event): void {
+    const target = <HTMLElement>event.target;
+    const id = target.id;
+
+    if (!id) return;
+
+    if (id.startsWith('edit_')) {
+      const deviceId = parseInt(id.slice(5));
+      this.editDevice(deviceId);
+    } else if (id.startsWith('delete_')) {
+      const deviceId = parseInt(id.slice(7));
+      this.deleteDevice(deviceId);
+    } else if (id.startsWith('switch_') && event.type === 'change') {
+      const deviceId = parseInt(id.slice(7));
+      const input = <HTMLInputElement>target;
+      this.handleSwitchChange(deviceId, input.checked);
+    } else if (id.startsWith('slider_') && event.type === 'change') {
+      const deviceId = parseInt(id.slice(7));
+      const input = <HTMLInputElement>target;
+      this.handleSliderChange(deviceId, parseInt(input.value));
+    }
+  }
+
     // Implements mostrarInfo
     public mostrarInfo(): string {console.log("Main Class - executing mostrarInfo()");return "";}
 }
@@ -183,7 +307,10 @@ window.addEventListener("load" ,  () =>
 {
     // New instance of main
     let main: Main = new Main();
-    
+
+    /* Register eventListenerHandlers */
+    document.getElementById('devices')?.addEventListener('click', (e) => main.handleEvent(e));
+    document.getElementById('devices')?.addEventListener('change', (e) => main.handleEvent(e));
     main.queryServer();
     
 });

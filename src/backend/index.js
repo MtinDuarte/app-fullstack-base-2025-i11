@@ -48,6 +48,9 @@ app.get('/devices/:id', function(req, res, next) {
 
 /* 
     Modify 1 device field per request using patch... 
+    id: id of the device. 
+    attribute: could be any attribute of the device present in ALLOWED_ATTRIBUTES
+    value: any value present in ALLOWED_STATES
 */
 app.patch('/devices/:id/:attribute/:value',function(req,res,next){
     
@@ -74,6 +77,32 @@ app.patch('/devices/:id/:attribute/:value',function(req,res,next){
         }
     })
 });
+
+/**
+ * Modify all device fields by using put
+ *  */
+app.put('/devices/:id/:name/:description/:value/:type',function(req,res,next)
+{
+    const { name, description, value, type , id} = req.params;
+
+    /* ToDo hacer un select para verificar que el elemento no existe.    */
+    const query = `UPDATE  Devices SET name = ? , description = ? , state = ? , type = ? where id = ?`;
+    
+    console.log(query, [name, description, value, type, id]);
+
+    utils.query(query, [name, description, value, type , id], function (error, respuesta) 
+    {
+        if (error == null) 
+        {
+            console.log(respuesta);
+            return res.status(200).send(respuesta);
+            } else {
+            console.log(error);
+            return res.status(409).send({ error: 'Failed request' });
+        }
+    })
+});
+
 /**
  * Register a new device...  
  */
