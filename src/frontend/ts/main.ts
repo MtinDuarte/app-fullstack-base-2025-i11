@@ -19,12 +19,12 @@ function device_saveChanges(id: number)
     console.log(`Guardar ${id}:`, updatedName, updatedDesc);
 
     /* Update database */
-    devices_updateDevice(id,updatedName,updatedDesc,0,updatedType);
+    device_updateAllFields(id,updatedName,updatedDesc,0,updatedType);
 
     /* Remove edition form */
     devices_cancelEdition(id);
 }
-function devices_updateDevice(id: number, name: string, description: string, state: number, type: number) 
+function device_updateAllFields(id: number, name: string, description: string, state: number, type: number) 
 {
   const xmlReq = new XMLHttpRequest();
 
@@ -43,6 +43,26 @@ function devices_updateDevice(id: number, name: string, description: string, sta
 
   xmlReq.open("PUT", url, true);
   xmlReq.send();
+}
+function device_updateValue(id: number, value: number)
+{
+  const xmlReq = new XMLHttpRequest();
+  
+  xmlReq.onreadystatechange = () => {
+    if (xmlReq.readyState === 4) {
+      if (xmlReq.status === 200) {
+        console.log("Dispositivo actualizado correctamente");
+      } else {
+        console.error("Error al actualizar dispositivo:", xmlReq.statusText);
+      }
+    }
+  };
+
+  // Codificar parámetros para que la URL sea válida
+  const url = `${SPA_URL}/devices/${id}/state/${value}`;
+
+  xmlReq.open("PATCH", url, true);
+  xmlReq.send();    
 }
 //#endregion
 
@@ -96,6 +116,7 @@ function devices_getTypeSelect(device)
 }
 //#endregion
 
+//#region Deletion
 function device_deleteDevice(id: number)
 {
   const xmlReq = new XMLHttpRequest();
@@ -116,6 +137,30 @@ function device_deleteDevice(id: number)
   xmlReq.open("DELETE", url, true);
   xmlReq.send();    
 }
+//#endregion
+
+//#region Creation
+function devices_createDevice(name: string, description: string, type: number) {
+  const xmlReq = new XMLHttpRequest();
+
+  xmlReq.onreadystatechange = () => {
+    if (xmlReq.readyState === 4) {
+      if (xmlReq.status === 201 || xmlReq.status === 200) {
+        console.log("Dispositivo creado correctamente");
+      } else {
+        console.error("Error al crear dispositivo:", xmlReq.statusText);
+      }
+    }
+  };
+
+  // Estado inicial en 0 (apagado)
+  const url = `${SPA_URL}/devices/${encodeURIComponent(name)}/${encodeURIComponent(description)}/0/${type}`;
+
+  xmlReq.open("POST", url, true);
+  xmlReq.send();
+}
+//#endregion
+
 
 function devices_createCard(device) 
 {
@@ -206,7 +251,7 @@ class Main implements EventListenerObject
         xmlReq.send();
     }
 
-    private editDevice(id: number) 
+    private device_edit(id: number) 
     {
         const card = document.getElementById(`device_card_${id}`);
         if (!card) return;
@@ -217,39 +262,40 @@ class Main implements EventListenerObject
         const formHtml = `
             <div id="edit_form_${id}">
 
-            <div class="input-field">
-                <input id="edit_name_${id}" type="text" value="">
-                <label class="active white-text" for="edit_name_${id}">Nombre</label>
-            </div>
+                <div class="input-field">
+                    <input id="edit_name_${id}" type="text" value="">
+                    <label class="active white-text" for="edit_name_${id}">Nombre</label>
+                </div>
 
-            <div class="input-field">
-                <textarea id="edit_desc_${id}" class="materialize-textarea"></textarea>
-                <label class="active  white-text" for="edit_desc_${id}">Descripción</label>
-            </div>
+                <div class="input-field">
+                    <textarea id="edit_desc_${id}" class="materialize-textarea"></textarea>
+                    <label class="active  white-text" for="edit_desc_${id}">Descripción</label>
+                </div>
             
-            <div class="input-field white-text">
-            <select id="edit_type_${id}" class="browser-default">
-                <option value="" disabled selected>Seleccione tipo</option>
-                <option value="0">Luz</option>
-                <option value="1">Persiana</option>
-                <option value="2">Aire</option>
-                <option value="3">Música</option>
-                <option value="4">TV</option>
-                <option value="5">Ventilador</option>
-            </select>
-            </div>
-                        
-            <button class="btn green" onclick="device_saveChanges(${id})">Guardar</button>
-            <button class="btn red" onclick="devices_cancelEdition(${id})">Cancelar</button>
+                <div class="input-field white-text">
+                <select id="edit_type_${id}" class="browser-default">
+                    <option value="" disabled selected>Seleccione tipo</option>
+                    <option value="0">Luz</option>
+                    <option value="1">Persiana</option>
+                    <option value="2">Aire</option>
+                    <option value="3">Música</option>
+                    <option value="4">TV</option>
+                    <option value="5">Ventilador</option>
+                </select>
+                </div>
+                
+                <div class="right-align">
+                    <button class="btn green" onclick="device_saveChanges(${id})">Guardar</button>
+                    <button class="btn red" onclick="devices_cancelEdition(${id})">Cancelar</button>
+                </div>
             </div>
         `;
 
         card?.insertAdjacentHTML("beforeend", formHtml);   
     }
 
-    private deleteDevice(id: number) 
-    {   
-        
+    private device_delete(id: number) 
+    {           
         const confirmar = window.confirm("¿Está seguro que desea eliminar el dispositivo?");
 
         if (confirmar) 
@@ -262,41 +308,115 @@ class Main implements EventListenerObject
             console.log("Eliminación cancelada.");
         }
     }
+    private device_showNewDeviceForm(): void 
+    {
+            // Evitar múltiples formularios abiertos
+        if (document.getElementById("add_form")) return;
+
+        const container = document.getElementById("devices");
+        if (!container) return;
+
+        const formHtml = `
+            <div id="add_form" class="card-panel blue lighten-5">
+            <div class="input-field">
+                <input id="add_name" type="text">
+                <label class="active" for="add_name">Nombre</label>
+            </div>
+
+            <div class="input-field">
+                <textarea id="add_desc" class="materialize-textarea"></textarea>
+                <label class="active" for="add_desc">Descripción</label>
+            </div>
+
+            <div class="input-field">
+                <label class="active">Tipo</label>
+                <select id="add_type" class="browser-default">
+                <option value="" disabled selected>Seleccionar tipo</option>
+                <option value="0">Luz</option>
+                <option value="1">Persiana</option>
+                <option value="2">Aire</option>
+                <option value="3">Música</option>
+                <option value="4">TV</option>
+                <option value="5">Ventilador</option>
+                </select>
+            </div>
+
+            <div class="right-align">
+                <button id="btn_add_confirm" class="btn green">Crear</button>
+                <button id="btn_add_cancel" class="btn red">Cancelar</button>
+            </div>
+            </div>
+        `;
+
+        container.insertAdjacentHTML("beforebegin", formHtml);
+    }
 
     private handleSwitchChange(id: number, state: boolean) 
     {
         console.log(`SWITCH dispositivo ${id}: ${state ? 'On' : 'Off'}`);
-        // lógica de actualización
+        
+        device_updateValue( id , state == false ? 0 : 1);
+
     }
 
     private handleSliderChange(id: number, value: number) 
     {
         console.log(`SLIDER dispositivo ${id}: ${value}`);
-        // lógica de actualización
+
+        device_updateValue( id , value);
     }
 
-  handleEvent(event: Event): void {
-    const target = <HTMLElement>event.target;
-    const id = target.id;
 
-    if (!id) return;
+    handleEvent(event: Event): void {
+        const target = <HTMLElement>event.target;
+        const id = target.id;
 
-    if (id.startsWith('edit_')) {
-      const deviceId = parseInt(id.slice(5));
-      this.editDevice(deviceId);
-    } else if (id.startsWith('delete_')) {
-      const deviceId = parseInt(id.slice(7));
-      this.deleteDevice(deviceId);
-    } else if (id.startsWith('switch_') && event.type === 'change') {
-      const deviceId = parseInt(id.slice(7));
-      const input = <HTMLInputElement>target;
-      this.handleSwitchChange(deviceId, input.checked);
-    } else if (id.startsWith('slider_') && event.type === 'change') {
-      const deviceId = parseInt(id.slice(7));
-      const input = <HTMLInputElement>target;
-      this.handleSliderChange(deviceId, parseInt(input.value));
+        if (!id) return;
+
+        if (id.startsWith('edit_'))
+        {
+        const deviceId = parseInt(id.slice(5));
+        this.device_edit(deviceId);
+        }
+        else if (id.startsWith('delete_')) 
+        {
+        const deviceId = parseInt(id.slice(7));
+        this.device_delete(deviceId);
+        }
+        else if (id.startsWith('switch_') && event.type === 'change') 
+        {
+        const deviceId = parseInt(id.slice(7));
+        const input = <HTMLInputElement>target;
+        this.handleSwitchChange(deviceId, input.checked);
+        } 
+        else if (id.startsWith('slider_') && event.type === 'change') 
+        {
+        const deviceId = parseInt(id.slice(7));
+        const input = <HTMLInputElement>target;
+        this.handleSliderChange(deviceId, parseInt(input.value));
+        }
+        else if (id === 'btn' && event.type === 'click') {
+            this.device_showNewDeviceForm();
+        }
+        else if (id === 'btn_add_confirm') {
+            
+            console.log("Boton crear");
+
+            const name = (<HTMLInputElement>document.getElementById("add_name")).value;
+            const desc = (<HTMLTextAreaElement>document.getElementById("add_desc")).value;
+            const type = parseInt((<HTMLSelectElement>document.getElementById("add_type")).value);
+
+            if (!name || !desc || isNaN(type)) {
+                alert("Completar todos los campos.");
+                return;
+            }
+
+            devices_createDevice(name, desc, type);
+        }
+        else if (id === 'btn_add_cancel') {
+        document.getElementById("add_form")?.remove();
+        }
     }
-  }
 
     // Implements mostrarInfo
     public mostrarInfo(): string {console.log("Main Class - executing mostrarInfo()");return "";}
@@ -311,7 +431,8 @@ window.addEventListener("load" ,  () =>
     /* Register eventListenerHandlers */
     document.getElementById('devices')?.addEventListener('click', (e) => main.handleEvent(e));
     document.getElementById('devices')?.addEventListener('change', (e) => main.handleEvent(e));
-    main.queryServer();
-    
+    document.getElementById("btn")?.addEventListener("click", (e) => main.handleEvent(e));
+    document.addEventListener('click', main);
+    main.queryServer();    
 });
 

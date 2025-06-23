@@ -59,8 +59,8 @@ app.patch('/devices/:id/:attribute/:value',function(req,res,next){
     if (!ALLOWED_ATTRIBUTES.includes(attribute))
         return res.status(400).send({ error: `Invalid device attribute: ${attribute}`});
     
-    if(!ALLOWED_STATES.includes(value))
-        return res.status(400).send({ error: `Invalid device state: ${value}`});
+    // if(!ALLOWED_STATES.includes(value))  // Entra en conflicto con el slider....
+    //     return res.status(400).send({ error: `Invalid device state: ${value}`});
 
     const query = `UPDATE Devices SET ${attribute} = ? WHERE id = ?`;
     console.log(query, [value, id]);
